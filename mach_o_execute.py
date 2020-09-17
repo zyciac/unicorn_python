@@ -8,19 +8,20 @@ from capstone.arm64 import *
 import struct
 
 def hook_code(mu, address, size, user_data):
-    print(mu.reg_read(UC_ARM64_REG_X1))
+    #print(mu.reg_read(UC_ARM64_REG_X1))
+    pass
 
 
-def macho_execute(binary, start, end, filter_address_list):
+def macho_execute(binary, start, end, hook_function):
     f = open(binary, 'rb')
     ARM64_CODE = f.read()
 
-    BASE = 0x1000000
+    BASE = 0x100000000
     STACK_ADDR = 0x0
     STACK_SIZE = 1024*1024
 
     mu = Uc(UC_ARCH_ARM64, UC_MODE_ARM)
-    mu.mem_map(BASE, 0xf00000)
+    mu.mem_map(BASE, 0xf000000)
     mu.mem_map(STACK_ADDR, STACK_SIZE)
 
     mu.mem_write(BASE, ARM64_CODE)
@@ -28,32 +29,32 @@ def macho_execute(binary, start, end, filter_address_list):
 
     start = BASE+start
     end = BASE + end
-    mu.hook_add(UC_HOOK_CODE, hook_code)
+    mu.hook_add(UC_HOOK_CODE, hook_function)
     mu.emu_start(start, end)
 
-    x0 = mu.reg_read(UC_ARM64_REG_X0)
-    x1 = mu.reg_read(UC_ARM64_REG_X1)
-    x2 = mu.reg_read(UC_ARM64_REG_X2)
-    x8 = mu.reg_read(UC_ARM64_REG_X8)
-    x9 = mu.reg_read(UC_ARM64_REG_X9)
-    sp = mu.reg_read(UC_ARM64_REG_SP)
-    print('sp is {}'.format(hex(sp)))
-    print('x0 is {}'.format(hex(x0)))
-    print('x1 is {}'.format(hex(x1)))
-    print('x2 is {}'.format(hex(x2)))
-    print('x8 is {}'.format(hex(x8)))
-    print('x9 is {}'.format(hex(x9)))
+    # x0 = mu.reg_read(UC_ARM64_REG_X0)
+    # x1 = mu.reg_read(UC_ARM64_REG_X1)
+    # x2 = mu.reg_read(UC_ARM64_REG_X2)
+    # x8 = mu.reg_read(UC_ARM64_REG_X8)
+    # x9 = mu.reg_read(UC_ARM64_REG_X9)
+    # sp = mu.reg_read(UC_ARM64_REG_SP)
+    # print('sp is {}'.format(hex(sp)))
+    # print('x0 is {}'.format(hex(x0)))
+    # print('x1 is {}'.format(hex(x1)))
+    # print('x2 is {}'.format(hex(x2)))
+    # print('x8 is {}'.format(hex(x8)))
+    # print('x9 is {}'.format(hex(x9)))
 
-    print('stack value')
-    size = 0x60
-    print(type(size))
-    stack_value_list = read_stack(mu, sp, size)
-    show_stack_value(stack_value_list)
+    # print('stack value')
+    # size = 0x60
+    # print(type(size))
+    # stack_value_list = read_stack(mu, sp, size)
+    # show_stack_value(stack_value_list)
 
 
 def read_stack(mu, sp, size):
     '''
-        stack address depends on the BASE of emulation
+        stack value depends on the BASE of emulation
     '''
     stack_value = mu.mem_read(sp, size)
     value_list = []
@@ -69,15 +70,15 @@ def show_stack_value(stack_value_list):
         print(hex(i))
 
 
+
 if __name__ == '__main__':
-    binary_path = '/Users/Zyciac/Desktop/ipas/on_device_positive/com.schedule.BarieTeacher/Payload/ChalkTeacher.app/ChalkTeacher'
+    binary = '/Users/Zyciac/Desktop/ipas/on_device_positive/com.schedule.BarieTeacher/Payload/ChalkTeacher.app/ChalkTeacher'
     start = 0x31BDB8
     end = 0x31BE30
     # binary = '/Users/Zyciac/Desktop/Solitaire'
     # start = 0x87488c
     # end = 0x874894
-    #disasm_macho(binary, start, end)
-    print('****** register values ******')
-    macho_execute(binary, start, end, None)
-    #return_function_jump_addr(binary, start, end)
-    
+    # disasm_macho(binary, start, end)
+    #print('****** register values ******')
+    macho_execute(binary, start, end, hook_code)
+    # return_function_jump_addr(binary, start, end)
